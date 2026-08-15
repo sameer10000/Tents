@@ -90,6 +90,44 @@ CREATE TABLE IF NOT EXISTS custom_tents (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- General enquiries: the contact page and the product enquiry drawer.
+--
+-- Kept apart from custom_tents because the two carry different things — a tent
+-- enquiry is a design specification, this is a conversation starter — and
+-- because merging them would mean one table where half the columns are always
+-- null.
+CREATE TABLE IF NOT EXISTS enquiries (
+  -- The reference quoted back to the customer, e.g. CE-8KD21X. Issued by the
+  -- server: the client used to invent one, which meant the number on the
+  -- confirmation screen matched nothing.
+  id           TEXT PRIMARY KEY,
+  kind         TEXT NOT NULL DEFAULT 'contact'
+               CHECK (kind IN ('contact', 'product')),
+  name         TEXT NOT NULL,
+  email        TEXT NOT NULL,
+  phone        TEXT NOT NULL DEFAULT '',
+  organisation TEXT NOT NULL DEFAULT '',
+  -- Free text rather than an enum: the options on the form are a convenience,
+  -- and pinning them in a CHECK would mean a migration every time marketing
+  -- reworded one.
+  role         TEXT NOT NULL DEFAULT '',
+  city         TEXT NOT NULL DEFAULT '',
+  units        TEXT NOT NULL DEFAULT '',
+  timeline     TEXT NOT NULL DEFAULT '',
+  message      TEXT NOT NULL DEFAULT '',
+  -- Which ranges the enquirer ticked on the contact page.
+  interest     JSONB NOT NULL DEFAULT '[]'::jsonb,
+  -- The piece the drawer was opened from, and anything in their wishlist.
+  subject_sku  TEXT,
+  saved_skus   JSONB NOT NULL DEFAULT '[]'::jsonb,
+  status       TEXT NOT NULL DEFAULT 'new'
+               CHECK (status IN ('new', 'pending', 'talked', 'closed')),
+  notes        TEXT NOT NULL DEFAULT '',
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_enquiries_status    ON enquiries(status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_custom_submitted   ON custom_tents(submitted, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_products_category  ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_family    ON products(family_id);
@@ -107,3 +145,4 @@ ALTER TABLE families     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_tents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE enquiries    ENABLE ROW LEVEL SECURITY;

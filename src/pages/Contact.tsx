@@ -5,6 +5,7 @@ import { Reveal } from '../components/motion/Reveal'
 import { SplitHeading } from '../components/motion/SplitHeading'
 import { ArrowIcon } from '../components/icons'
 import { useWishlist } from '../context/wishlist'
+import { ApiError, api } from '../lib/api'
 
 const INTERESTS = [
   'Glamping & hospitality structures',
@@ -83,6 +84,8 @@ export function Contact() {
   const { items } = useWishlist()
   const [interest, setInterest] = useState<string[]>([])
   const [reference, setReference] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function toggleInterest(value: string) {
     setInterest((current) =>
@@ -90,20 +93,43 @@ export function Contact() {
     )
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const data = Object.fromEntries(new FormData(event.currentTarget).entries())
+    if (sending) return
 
-    // No backend is wired up in this catalogue build — the payload is logged so
-    // it can be picked up by whatever the site is eventually connected to.
-    console.info('[Canvas Emporium] dealer enquiry', {
-      ...data,
-      interest,
-      saved: items.map((product) => product.sku),
-      submittedAt: new Date().toISOString(),
-    })
+    const data = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<
+      string,
+      string
+    >
 
-    setReference(`CE-${Date.now().toString(36).toUpperCase().slice(-6)}`)
+    setSending(true)
+    setError(null)
+
+    try {
+      // The server issues the reference — it is the primary key of the row
+      // just written, so quoting it back actually finds the enquiry.
+      const { reference: issued } = await api.post<{ reference: string }>('/enquiries', {
+        kind: 'contact',
+        name: data.name,
+        organisation: data.organisation,
+        email: data.email,
+        phone: data.phone,
+        city: data.location,
+        units: data.units,
+        message: data.message,
+        interest,
+        savedSkus: items.map((product) => product.sku),
+        website: data.website,
+      })
+
+      setReference(issued)
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError ? cause.message : 'That did not send. Please try again.',
+      )
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -195,7 +221,7 @@ export function Contact() {
                   </button>
                 </motion.div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-10">
+                <form onSubmit={(event) => void handleSubmit(event)} className="space-y-10">
                   <div className="grid gap-8 sm:grid-cols-2">
                     <input
                       required
@@ -270,13 +296,37 @@ export function Contact() {
                     className={`${field} resize-none`}
                   />
 
+                  {/* Honeypot. Hidden from people, irresistible to form bots —
+                      anything that fills it in is answered as though it worked. */}
+                  <input
+                    type="text"
+                    name="website"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    className="absolute left-[-9999px] h-px w-px opacity-0"
+                  />
+
+                  {error ? (
+                    <p
+                      role="alert"
+                      className="border-l-2 border-accent pl-4 text-sm font-light text-accent"
+                    >
+                      {error}
+                    </p>
+                  ) : null}
+
                   <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
                     <p className="max-w-[42ch] text-[0.7rem] leading-relaxed font-light text-muted">
                       By sending this you agree to be contacted about your enquiry. We do
                       not add trade enquiries to a mailing list.
                     </p>
-                    <button type="submit" className="btn-luxe btn-solid shrink-0">
-                      Send enquiry
+                    <button
+                      type="submit"
+                      disabled={sending}
+                      className="btn-luxe btn-solid shrink-0 disabled:opacity-50"
+                    >
+                      {sending ? 'Sending…' : 'Send enquiry'}
                       <ArrowIcon className="h-4 w-4" />
                     </button>
                   </div>

@@ -72,6 +72,54 @@ export function clearFailures(key) {
   buckets.delete(key)
 }
 
+/* ── Public submissions ────────────────────────────────────────────────── */
+
+const SUBMIT_WINDOW_MS = 60 * 60 * 1000
+
+/**
+ * Deliberately loose.
+ *
+ * The limit is per IP, and mobile carriers — especially in India, which is
+ * most of this catalogue's traffic — put large numbers of subscribers behind
+ * carrier-grade NAT. A handful of enquiries an hour would read as abuse from
+ * one address while actually being several unrelated customers. The honeypot
+ * is what stops bots; this only stops a flood.
+ */
+const SUBMIT_MAX = 20
+
+const submissions = new Map()
+
+/**
+ * Throttles anonymous writes.
+ *
+ * The enquiry endpoint takes no credentials and inserts a row, which is the
+ * shape every form-spam bot looks for. Six an hour is far more than a real
+ * enquirer needs and far less than a script wants.
+ *
+ * Counts every attempt, not just failures — unlike login, a successful
+ * submission is exactly what is being abused.
+ */
+export function checkSubmissionLimit(key) {
+  const now = Date.now()
+
+  for (const [existing, bucket] of submissions) {
+    if (bucket.resetAt <= now) submissions.delete(existing)
+  }
+  if (submissions.size > MAX_KEYS) submissions.clear()
+
+  const bucket = submissions.get(key)
+
+  if (!bucket || bucket.resetAt <= now) {
+    submissions.set(key, { count: 1, resetAt: now + SUBMIT_WINDOW_MS })
+    return null
+  }
+
+  bucket.count += 1
+  if (bucket.count <= SUBMIT_MAX) return null
+
+  return Math.ceil((bucket.resetAt - now) / 1000)
+}
+
 /* ── Concurrency ───────────────────────────────────────────────────────── */
 
 const MAX_CONCURRENT = 4

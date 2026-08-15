@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 import { sql } from './db.js'
-import { IS_PRODUCTION, SESSION_SECRET, SESSION_TTL_MS } from './config.js'
+import { COOKIE_SAMESITE, IS_PRODUCTION, SESSION_SECRET, SESSION_TTL_MS } from './config.js'
 
 const COOKIE_NAME = 'ce_session'
 
@@ -151,16 +151,18 @@ function parseCookies(header = '') {
  * refuse the cookie in development; localhost counts as a secure context, so
  * this could be unconditional for most setups but breaks a LAN-IP dev server.
  *
- * SameSite is Strict rather than Lax: this cookie only ever authenticates the
- * admin portal, which is never linked to from elsewhere, so there is nothing
- * to lose and it removes the subdomain-is-same-site gap that Lax leaves open.
+ * SameSite defaults to Strict: this cookie only ever authenticates the admin
+ * portal, which is never linked to from elsewhere, so there is nothing to lose
+ * and it removes the subdomain-is-same-site gap that Lax leaves open. It is
+ * configurable because a front end on a different registrable domain needs
+ * None, which the browser will only honour alongside Secure.
  */
 function attributes() {
   return [
     'HttpOnly',
-    'SameSite=Strict',
+    `SameSite=${COOKIE_SAMESITE}`,
     'Path=/',
-    IS_PRODUCTION ? 'Secure' : null,
+    IS_PRODUCTION || COOKIE_SAMESITE === 'None' ? 'Secure' : null,
   ].filter(Boolean)
 }
 

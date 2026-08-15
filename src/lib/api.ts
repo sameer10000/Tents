@@ -1,9 +1,13 @@
 /**
- * Thin fetch wrapper for the local API.
+ * Thin fetch wrapper for the API.
  *
- * Same origin in development via the Vite proxy, so the session cookie needs no
- * CORS handling — `credentials: 'include'` is belt and braces.
+ * In development Vite proxies /api, so everything is same-origin and the
+ * session cookie needs no CORS handling. A deployed front end served from a
+ * different host sets VITE_API_URL to the API's origin at build time, and
+ * `credentials: 'include'` stops being belt and braces — it is what carries
+ * the session.
  */
+const API_ORIGIN = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 
 export class ApiError extends Error {
   readonly status: number
@@ -18,7 +22,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let response: Response
 
   try {
-    response = await fetch(`/api${path}`, {
+    response = await fetch(`${API_ORIGIN}/api${path}`, {
       credentials: 'include',
       ...init,
       headers:

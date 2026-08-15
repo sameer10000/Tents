@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { useUI } from '../context/ui'
 import { useWishlist } from '../context/wishlist'
 import type { Product } from '../data/types'
+import { ApiError, api } from '../lib/api'
 import { Drawer } from './Drawer'
 
 const ROLES = [
@@ -27,6 +28,8 @@ interface FormState {
   units: string
   timeline: string
   message: string
+  /** Honeypot — always empty for a real person. */
+  website: string
 }
 
 const EMPTY: FormState = {
@@ -39,6 +42,7 @@ const EMPTY: FormState = {
   units: '',
   timeline: TIMELINES[1],
   message: '',
+  website: '',
 }
 
 const field =
@@ -68,26 +72,47 @@ function InquiryForm({ subject, onDone }: { subject?: Product; onDone: () => voi
   const { items } = useWishlist()
   const [form, setForm] = useState<FormState>(EMPTY)
   const [reference, setReference] = useState<string | null>(null)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }))
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
+    if (sending) return
 
-    const payload = {
-      ...form,
-      subject: subject?.sku ?? null,
-      saved: items.map((product) => product.sku),
-      submittedAt: new Date().toISOString(),
+    setSending(true)
+    setError(null)
+
+    try {
+      // The reference comes back from the server, which is what makes it
+      // quotable — it is the primary key of the row that was just written.
+      const { reference: issued } = await api.post<{ reference: string }>('/enquiries', {
+        kind: subject ? 'product' : 'contact',
+        name: form.name,
+        organisation: form.organisation,
+        role: form.role,
+        email: form.email,
+        phone: form.phone,
+        city: form.city,
+        units: form.units,
+        timeline: form.timeline,
+        message: form.message,
+        subjectSku: subject?.sku ?? null,
+        savedSkus: items.map((product) => product.sku),
+        website: form.website,
+      })
+
+      setReference(issued)
+    } catch (cause) {
+      setError(
+        cause instanceof ApiError ? cause.message : 'That did not send. Please try again.',
+      )
+    } finally {
+      setSending(false)
     }
-
-    // No backend is wired up in this catalogue build. The payload is logged so
-    // it can be picked up by whatever the site is eventually connected to.
-    console.info('[Canvas Emporium] enquiry', payload)
-
-    setReference(`CE-${Date.now().toString(36).toUpperCase().slice(-6)}`)
   }
 
   if (reference) {
@@ -114,7 +139,7 @@ function InquiryForm({ subject, onDone }: { subject?: Product; onDone: () => voi
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={(event) => void handleSubmit(event)} className="space-y-6">
       {subject ? (
         <div className="border-l-2 border-accent pl-4">
           <p className="eyebrow">Enquiring about</p>
@@ -225,9 +250,28 @@ function InquiryForm({ subject, onDone }: { subject?: Product; onDone: () => voi
         className={`${field} resize-none`}
       />
 
-      <button type="submit" className="btn-luxe btn-solid w-full">
-        Send enquiry
+      {/* Honeypot. Hidden from people, irresistible to form bots — anything
+          that fills it in is answered as though it succeeded. */}
+      <input
+        type="text"
+        name="website"
+        value={form.website}
+        onChange={(event) => update('website', event.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute left-[-9999px] h-px w-px opacity-0"
+      />
+
+      <button type="submit" disabled={sending} className="btn-luxe btn-solid w-full disabled:opacity-50">
+        {sending ? 'Sending…' : 'Send enquiry'}
       </button>
+
+      {error ? (
+        <p role="alert" className="border-l-2 border-accent pl-4 text-sm font-light text-accent">
+          {error}
+        </p>
+      ) : null}
 
       <p className="text-[0.68rem] leading-relaxed font-light text-muted">
         Custom work begins only after an approved drawing. Terms are 50% advance, 40%

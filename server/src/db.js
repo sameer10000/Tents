@@ -21,6 +21,16 @@ export const sql = postgres(DATABASE_URL, {
   // Never coerce JSONB or timestamps to strings — the row helpers below rely
   // on getting real arrays, objects and Dates back.
   transform: { undefined: null },
+  /**
+   * Postgres emits a NOTICE for every CREATE ... IF NOT EXISTS that finds the
+   * object already there, which is the normal path when re-applying the
+   * schema. Dropping just those keeps a genuine notice visible instead of
+   * burying it under twenty lines of "already exists, skipping".
+   */
+  onnotice(notice) {
+    if (notice.code === '42P07' || notice.code === '42710') return
+    console.warn(`[postgres] ${notice.severity}: ${notice.message}`)
+  },
 })
 
 export async function closeDb() {
@@ -175,6 +185,35 @@ export function rowToCustomTent(row, { includeContact = false } = {}) {
   }
 
   return record
+}
+
+/**
+ * Row → general enquiry.
+ *
+ * Contact details are always included: unlike a custom tent, this record has
+ * no public face — only the admin inbox ever reads it.
+ */
+export function rowToEnquiry(row) {
+  return {
+    id: row.id,
+    kind: row.kind,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    organisation: row.organisation,
+    role: row.role,
+    city: row.city,
+    units: row.units,
+    timeline: row.timeline,
+    message: row.message,
+    interest: list(row.interest),
+    subjectSku: row.subject_sku,
+    savedSkus: list(row.saved_skus),
+    status: row.status,
+    notes: row.notes,
+    createdAt: row.created_at.toISOString(),
+    updatedAt: row.updated_at.toISOString(),
+  }
 }
 
 /** Table names are never user-supplied here — the callers pass literals. */

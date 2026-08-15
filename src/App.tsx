@@ -71,6 +71,9 @@ const AdminProductEditor = lazy(() =>
 const AdminEnquiries = lazy(() =>
   import('./pages/admin/AdminEnquiries').then((m) => ({ default: m.AdminEnquiries })),
 )
+const AdminMessages = lazy(() =>
+  import('./pages/admin/AdminMessages').then((m) => ({ default: m.AdminMessages })),
+)
 const AdminHouses = lazy(() =>
   import('./pages/admin/AdminTaxonomy').then((m) => ({ default: m.AdminHouses })),
 )
@@ -104,7 +107,10 @@ export default function App() {
             <Route path="products" element={<AdminProducts />} />
             <Route path="products/new" element={<AdminProductEditor />} />
             <Route path="products/:sku" element={<AdminProductEditor />} />
-            <Route path="enquiries" element={<AdminEnquiries />} />
+            {/* Contact page and enquiry drawer. */}
+            <Route path="enquiries" element={<AdminMessages />} />
+            {/* Tents designed in the configurator — a different shape entirely. */}
+            <Route path="tent-designs" element={<AdminEnquiries />} />
             <Route path="sections" element={<AdminSections />} />
             <Route path="houses" element={<AdminHouses />} />
           </Route>

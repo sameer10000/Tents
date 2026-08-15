@@ -88,7 +88,14 @@ async function migrateImages(products) {
 /* ── Safety ────────────────────────────────────────────────────────────── */
 
 /** Everything this application owns. Anything else in public is not ours. */
-const OWNED = new Set(['users', 'families', 'categories', 'products', 'custom_tents'])
+const OWNED = new Set([
+  'users',
+  'families',
+  'categories',
+  'products',
+  'custom_tents',
+  'enquiries',
+])
 
 /**
  * Refuses to touch a database that belongs to something else.

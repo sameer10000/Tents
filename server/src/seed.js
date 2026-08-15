@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { sql, countRows } from './db.js'
 import { createUser } from './auth.js'
-import { PROJECT_ROOT } from './config.js'
+import { IS_PRODUCTION, PROJECT_ROOT } from './config.js'
 
 /**
  * Loads the bundled TypeScript catalogue through Vite, which transpiles it and
@@ -133,6 +133,19 @@ export async function ensureSeeded() {
   await ensureAdmin()
 
   if ((await countRows('products')) > 0) return
+
+  // Seeding transpiles src/data through Vite, which is a devDependency and is
+  // pruned from a production install. Say so plainly rather than dying on a
+  // module-not-found six frames down.
+  if (IS_PRODUCTION) {
+    console.warn(
+      '\n  ! The catalogue is empty and cannot be seeded in production —\n' +
+        '    seeding needs Vite, which is not installed here.\n' +
+        '    Run `npm run db:migrate` against this database from a development\n' +
+        '    checkout, then restart.\n',
+    )
+    return
+  }
 
   console.log('  Seeding catalogue from src/data …')
   const catalogue = await loadStaticCatalogue()

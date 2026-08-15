@@ -51,6 +51,47 @@ export const CLOUDINARY = {
 
 export const CLOUDINARY_FOLDER = process.env.CLOUDINARY_FOLDER ?? 'canvas-emporium'
 
+/* ── Browser origins ────────────────────────────────────────────────────── */
+
+/**
+ * Origins allowed to call the API with credentials.
+ *
+ * Empty in development, where Vite proxies /api and everything is same-origin.
+ * Set once the storefront is served from somewhere other than this process —
+ * comma separated, scheme and host, no trailing slash.
+ */
+export const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
+/**
+ * SameSite policy for the session cookie.
+ *
+ * The correct value follows from where the two halves are deployed:
+ *
+ *   Strict  one origin, or api.example.com beside www.example.com. Both are
+ *           "same site", so the cookie rides along and nothing is third-party.
+ *   None    different registrable domains, e.g. a .web.app front end calling
+ *           a .up.railway.app API. The browser then treats the cookie as
+ *           third-party — it requires Secure, and browsers phasing out
+ *           third-party cookies will eventually refuse it regardless.
+ *
+ * Defaulting to Strict means an accidental cross-site deployment fails at
+ * login rather than silently relying on a cookie that is being deprecated.
+ */
+const SAMESITE = process.env.COOKIE_SAMESITE ?? 'Strict'
+
+if (!['Strict', 'Lax', 'None'].includes(SAMESITE)) {
+  throw new Error(`COOKIE_SAMESITE must be Strict, Lax or None — got "${SAMESITE}".`)
+}
+
+if (SAMESITE === 'None' && !IS_PRODUCTION) {
+  throw new Error('COOKIE_SAMESITE=None requires HTTPS, so it only works with NODE_ENV=production.')
+}
+
+export const COOKIE_SAMESITE = SAMESITE
+
 /* ── Sessions ───────────────────────────────────────────────────────────── */
 
 /**
