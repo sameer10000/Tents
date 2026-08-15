@@ -50,14 +50,28 @@ app.use('/api', customTentsRouter)
 app.use('/api', enquiriesRouter)
 app.use('/api', uploadsRouter)
 
+/**
+ * Liveness, not readiness.
+ *
+ * Answers 200 whenever the process is up, and reports the database state in
+ * the body rather than failing the whole response. A healthcheck that goes
+ * unavailable the moment Postgres hiccups causes the platform to roll the
+ * deployment back and destroy the container — taking the logs that would have
+ * explained the problem with it.
+ */
 app.get('/api/health', async (_req, res) => {
-  const [families, categories, products, customTents] = await Promise.all([
-    countRows('families'),
-    countRows('categories'),
-    countRows('products'),
-    countRows('custom_tents'),
-  ])
-  res.json({ ok: true, families, categories, products, customTents })
+  try {
+    const [families, categories, products, customTents] = await Promise.all([
+      countRows('families'),
+      countRows('categories'),
+      countRows('products'),
+      countRows('custom_tents'),
+    ])
+    res.json({ ok: true, database: 'connected', families, categories, products, customTents })
+  } catch (error) {
+    console.error('Health check could not reach the database:', error)
+    res.json({ ok: false, database: 'unreachable', error: error.message })
+  }
 })
 
 app.use('/api', (_req, res) => res.status(404).json({ error: 'No such endpoint.' }))
@@ -112,13 +126,32 @@ app.use((error, _req, res, _next) => {
   })
 })
 
-await ensureSeeded()
-
+/**
+ * Open the port first, seed second.
+ *
+ * Seeding talks to the database, and this used to be awaited before
+ * listen() — so anything wrong with the connection meant the process never
+ * bound a port at all. A platform healthcheck cannot distinguish that from a
+ * crash: it just sees nothing listening and reports the service as
+ * unavailable, with the actual cause nowhere in the deploy log.
+ *
+ * Listening immediately means the failure surfaces as a health response that
+ * says what broke, instead of silence.
+ */
 const server = app.listen(PORT, () => {
-  console.log(`\n  Canvas Emporium API  ·  http://localhost:${PORT}`)
-  console.log(`  Catalogue            ·  http://localhost:${PORT}/api/catalogue`)
-  console.log(`  Admin portal         ·  http://localhost:5173/admin\n`)
+  console.log(`\n  Canvas Emporium API listening on ${PORT}`)
+  console.log(`  Health · /api/health`)
 })
+
+try {
+  await ensureSeeded()
+  console.log('  Database reachable, catalogue present.\n')
+} catch (error) {
+  // Deliberately not fatal. The port stays open so /api/health can report the
+  // problem rather than the container looking simply dead.
+  console.error('\n  ! Could not reach the database at startup.')
+  console.error(`  ! ${error.message}\n`)
+}
 
 /**
  * Close the pool on the way out.
