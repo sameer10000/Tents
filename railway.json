@@ -2,7 +2,6 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "//": "--include=dev is required: vite and typescript are devDependencies, and NODE_ENV=production would otherwise omit them and break the build.",
     "buildCommand": "npm ci --include=dev && npm run build"
   },
   "deploy": {
