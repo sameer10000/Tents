@@ -1,0 +1,186 @@
+import { C } from '../palette'
+import type { Product } from '../types'
+
+/**
+ * The Atelier — 6 commissions, the founding X-range.
+ *
+ * Prices here are indicative starting points against a typical specification.
+ * Nothing in this house ships without an approved technical drawing, and the
+ * figure shown is what a quote is built up from, not a shelf price.
+ */
+export const atelier: Product[] = [
+  {
+    sku: 'X01',
+    name: 'Custom Tent Commission',
+    family: 'atelier',
+    category: 'bespoke',
+    tagline: 'Drawn to your dimensions, from a blank sheet.',
+    description:
+      'A single structure designed around a site rather than adapted to it. We survey, draw, prototype the critical junctions and then cut. Typical lead time is eight to ten weeks from approved drawing.',
+    price: 150000,
+    cogs: 78000,
+    channel: 'B2B',
+    moq: 1,
+    dimensions: 'To specification',
+    materials: [
+      'Canvas weight specified per application',
+      'Galvanised or powder-coated frame',
+      'Site-specific anchoring design',
+      'Full technical drawing set',
+    ],
+    colors: [C.natural, C.khaki, C.olive, C.forest],
+    details: [
+      'Site survey and measured drawing included',
+      'Critical junctions prototyped before production',
+      'Eight to ten weeks from drawing approval',
+      '50% advance · 40% before dispatch · 10% after installation',
+    ],
+    plate: 'project',
+    featured: true,
+  },
+  {
+    sku: 'X02',
+    name: 'Restaurant Canopy Project',
+    family: 'atelier',
+    category: 'bespoke',
+    tagline: 'Covered covers, engineered for a service that cannot stop.',
+    description:
+      'A canopy system for a terrace or courtyard service, specified around seating plan, drainage fall and local wind loading. Fire-retardant cloth available where the venue requires certification.',
+    price: 100000,
+    cogs: 52000,
+    channel: 'B2B',
+    moq: 1,
+    dimensions: 'To specification',
+    materials: [
+      'Marine or fire-retardant canvas per requirement',
+      'Powder-coated structural frame',
+      'Integrated drainage fall',
+      'Optional roll-down side screens',
+    ],
+    colors: [C.bone, C.natural, C.olive, C.charcoal],
+    details: [
+      'Drainage fall designed into the cut',
+      'Fire-retardant cloth with certification where required',
+      'Installed outside service hours',
+      'Seasonal cloth replacement contract available',
+    ],
+    plate: 'project',
+  },
+  {
+    sku: 'X03',
+    name: 'Resort Package — Five Tents',
+    family: 'atelier',
+    category: 'bespoke',
+    tagline: 'Five keys, one delivery, one drawing set.',
+    description:
+      'A five-unit package of safari or Swiss cottage structures with matched interiors, decking interface and a single installation visit. The smallest package that makes a property viable.',
+    price: 650000,
+    cogs: 340000,
+    channel: 'B2B',
+    moq: 1,
+    capacity: '5 keys',
+    dimensions: 'Per selected structure',
+    materials: [
+      'Five matched structures',
+      'Deck interface detailing',
+      'Matched interior soft goods',
+      'Single consolidated freight',
+    ],
+    colors: [C.natural, C.khaki, C.olive],
+    details: [
+      'One drawing set covering all five units',
+      'Consolidated freight and a single installation visit',
+      'Matched interior soft goods included',
+      'Spares package supplied against the whole order',
+    ],
+    plate: 'project',
+    featured: true,
+  },
+  {
+    sku: 'X04',
+    name: 'Resort Package — Ten Tents',
+    family: 'atelier',
+    category: 'bespoke',
+    tagline: 'A property, delivered.',
+    description:
+      'Ten keys with matched interiors, walkway and deck detailing, back-of-house staff structures and a phased installation programme. Priced as a project, not as ten products.',
+    price: 1250000,
+    cogs: 650000,
+    channel: 'B2B',
+    moq: 1,
+    capacity: '10 keys',
+    dimensions: 'Per selected structure',
+    materials: [
+      'Ten matched structures',
+      'Back-of-house staff tents included',
+      'Deck and walkway interface detailing',
+      'Matched interior soft goods',
+    ],
+    colors: [C.natural, C.khaki, C.olive],
+    details: [
+      'Phased installation across the property',
+      'Back-of-house structures included in the package',
+      'Consolidated freight in two shipments',
+      'Two-year structural warranty on the frames',
+    ],
+    plate: 'project',
+    badge: 'Flagship',
+  },
+  {
+    sku: 'X05',
+    name: 'Corporate Canvas Gift Set',
+    family: 'atelier',
+    category: 'bespoke',
+    tagline: 'A gift that survives the recipient changing jobs.',
+    description:
+      'A tote, a toiletry kit and a utility organiser in matched canvas, in a rigid presentation box. Debossed or embroidered to your mark, from one hundred sets.',
+    price: 1799,
+    cogs: 650,
+    channel: 'B2B',
+    moq: 100,
+    weight: '1.1 kg per set',
+    dimensions: '36 × 28 × 14 cm boxed',
+    materials: [
+      '14 oz cotton duck',
+      'Vegetable-tanned leather patch',
+      'Rigid presentation box',
+      'Debossed or embroidered marking',
+    ],
+    colors: [C.natural, C.olive, C.charcoal, C.ink],
+    details: [
+      'Three pieces per set in matched cloth',
+      'Debossed leather patch or direct embroidery',
+      'Minimum one hundred sets',
+      'Four weeks from artwork approval',
+    ],
+    plate: 'project',
+  },
+  {
+    sku: 'X06',
+    name: 'Architect & Designer Commission',
+    family: 'atelier',
+    category: 'bespoke',
+    tagline: 'We make what you have drawn.',
+    description:
+      'A fabrication service for practices with their own design. You supply the intent; we advise on cloth weight, seam strategy and hardware, then prototype and produce. Trade terms apply.',
+    price: 75000,
+    cogs: 38000,
+    channel: 'B2B',
+    moq: 1,
+    dimensions: 'To your drawing',
+    materials: [
+      'Cloth and hardware specified jointly',
+      'Prototype before production run',
+      'Full material data sheets supplied',
+      'Trade pricing on repeat runs',
+    ],
+    colors: [C.natural, C.bone, C.olive, C.charcoal],
+    details: [
+      'Material advisory on weight, seam and hardware',
+      'One prototype included before production',
+      'Data sheets supplied for specification packs',
+      'Trade programme available for practices',
+    ],
+    plate: 'project',
+  },
+]

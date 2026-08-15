@@ -1,0 +1,378 @@
+@import 'tailwindcss';
+
+/* Manual theme control — the toggle wins over the OS preference. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─────────────────────────────────────────────────────────────
+   Brand scale — fixed values, identical in both themes.
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  --color-ink-950: #08090a;
+  --color-ink-900: #0b0b0c;
+  --color-ink-850: #121316;
+  --color-ink-800: #1a1c1f;
+  --color-ink-700: #24262a;
+  --color-ink-600: #33363b;
+  --color-ink-500: #4a4d53;
+
+  --color-ivory-50: #fbf9f5;
+  --color-ivory-100: #f6f3ec;
+  --color-ivory-200: #ede8dd;
+  --color-ivory-300: #ded6c6;
+  --color-ivory-400: #c4b9a4;
+
+  --color-olive-200: #cdd0bb;
+  --color-olive-300: #a8ae90;
+  --color-olive-400: #878d6c;
+  --color-olive-500: #6b7150;
+  --color-olive-600: #545a3f;
+  --color-olive-700: #414632;
+
+  --color-forest-500: #33422c;
+  --color-forest-600: #283420;
+  --color-forest-700: #1d2718;
+  --color-forest-800: #141c11;
+
+  --color-brass-200: #efdfba;
+  --color-brass-300: #e3cd9b;
+  --color-brass-400: #c6a667;
+  --color-brass-500: #b08d4f;
+  --color-brass-600: #8c6d3a;
+
+  --font-display:
+    'Cormorant Garamond', 'Iowan Old Style', 'Palatino Linotype', Palatino,
+    Georgia, 'Times New Roman', serif;
+  --font-sans:
+    'Jost', ui-sans-serif, 'Segoe UI', -apple-system, BlinkMacSystemFont,
+    Helvetica, Arial, sans-serif;
+
+  --ease-luxe: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-drape: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --animate-drift: drift 22s var(--ease-drape) infinite alternate;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Semantic tokens — these are what components consume.
+   Defined once per theme; `@theme inline` keeps them reactive.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --ce-surface: #f6f3ec;
+  --ce-surface-2: #ede8dd;
+  --ce-raised: #fbf9f5;
+  --ce-ink: #14161a;
+  --ce-ink-soft: #3d4148;
+  --ce-muted: #6e7178;
+  --ce-line: rgb(20 22 26 / 0.12);
+  --ce-line-strong: rgb(20 22 26 / 0.24);
+  --ce-accent: #8c6d3a;
+  --ce-accent-soft: #b08d4f;
+  --ce-glass: rgb(251 249 245 / 0.72);
+  --ce-glass-line: rgb(20 22 26 / 0.08);
+  --ce-shadow: 0 1px 2px rgb(20 22 26 / 0.04), 0 12px 40px -12px rgb(20 22 26 / 0.16);
+  --ce-grain: 0.035;
+  --ce-plate-shade: 0.06;
+}
+
+.dark {
+  --ce-surface: #0b0b0c;
+  --ce-surface-2: #121316;
+  --ce-raised: #1a1c1f;
+  --ce-ink: #f2eee6;
+  --ce-ink-soft: #c9c4ba;
+  --ce-muted: #8b8b8e;
+  --ce-line: rgb(242 238 230 / 0.12);
+  --ce-line-strong: rgb(242 238 230 / 0.26);
+  --ce-accent: #c6a667;
+  --ce-accent-soft: #e3cd9b;
+  --ce-glass: rgb(18 19 22 / 0.66);
+  --ce-glass-line: rgb(242 238 230 / 0.1);
+  --ce-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 20px 60px -18px rgb(0 0 0 / 0.7);
+  --ce-grain: 0.07;
+  --ce-plate-shade: 0.5;
+}
+
+@theme inline {
+  --color-surface: var(--ce-surface);
+  --color-surface-2: var(--ce-surface-2);
+  --color-raised: var(--ce-raised);
+  --color-ink: var(--ce-ink);
+  --color-ink-soft: var(--ce-ink-soft);
+  --color-muted: var(--ce-muted);
+  --color-line: var(--ce-line);
+  --color-line-strong: var(--ce-line-strong);
+  --color-accent: var(--ce-accent);
+  --color-accent-soft: var(--ce-accent-soft);
+  --color-glass: var(--ce-glass);
+  --color-glass-line: var(--ce-glass-line);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Base
+   ───────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    border-color: var(--ce-line);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--ce-surface);
+    color: var(--ce-ink);
+    font-family: var(--font-sans);
+    font-weight: 300;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    transition:
+      background-color 0.6s var(--ease-luxe),
+      color 0.6s var(--ease-luxe);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 300;
+    letter-spacing: -0.015em;
+    color: var(--ce-ink);
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--ce-accent);
+    color: var(--ce-surface);
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--ce-accent);
+    outline-offset: 3px;
+  }
+
+  /* A hairline scrollbar keeps the editorial feel intact. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--ce-surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--ce-line-strong);
+    border: 3px solid var(--ce-surface);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--ce-accent);
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Components & utilities
+   ───────────────────────────────────────────────────────────── */
+@layer components {
+  /* Wide-tracked micro-caps: the connective tissue of the whole layout. */
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.625rem;
+    font-weight: 400;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: var(--ce-muted);
+  }
+
+  .eyebrow-accent {
+    color: var(--ce-accent);
+  }
+
+  .rule {
+    height: 1px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--ce-line-strong) 18%,
+      var(--ce-line-strong) 82%,
+      transparent
+    );
+  }
+
+  .glass {
+    background: var(--ce-glass);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border-color: var(--ce-glass-line);
+  }
+
+  /* Understated link underline that draws itself on hover. */
+  .link-draw {
+    position: relative;
+    display: inline-block;
+  }
+  .link-draw::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    height: 1px;
+    width: 100%;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.55s var(--ease-luxe);
+  }
+  .link-draw:hover::after,
+  .link-draw[data-active='true']::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .btn-luxe {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    overflow: hidden;
+    padding: 1rem 2.25rem;
+    font-size: 0.6875rem;
+    font-weight: 400;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    border: 1px solid var(--ce-line-strong);
+    color: var(--ce-ink);
+    transition:
+      color 0.6s var(--ease-luxe),
+      border-color 0.6s var(--ease-luxe);
+  }
+  .btn-luxe::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--ce-ink);
+    transform: translateY(101%);
+    transition: transform 0.6s var(--ease-luxe);
+    z-index: -1;
+  }
+  .btn-luxe:hover {
+    color: var(--ce-surface);
+    border-color: var(--ce-ink);
+  }
+  .btn-luxe:hover::before {
+    transform: translateY(0);
+  }
+
+  .btn-solid {
+    background: var(--ce-ink);
+    color: var(--ce-surface);
+    border-color: var(--ce-ink);
+  }
+  .btn-solid::before {
+    background: var(--ce-accent);
+  }
+  .btn-solid:hover {
+    color: var(--ce-surface);
+    border-color: var(--ce-accent);
+  }
+}
+
+@utility grain {
+  position: relative;
+  isolation: isolate;
+}
+
+@utility grain-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--ce-grain);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/* The carousel has its own arrows and progress rule; a scrollbar under it
+   would be a second, uglier control for the same thing. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility edge-fade {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+}
+
+@keyframes drift {
+  from {
+    transform: scale(1.06) translate3d(-1.2%, -0.8%, 0);
+  }
+  to {
+    transform: scale(1.14) translate3d(1.2%, 0.8%, 0);
+  }
+}
+
+/* The track holds two identical copies, so -50% is exactly one loop. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -160% 0;
+  }
+  to {
+    background-position: 260% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
