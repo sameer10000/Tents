@@ -30,10 +30,16 @@ function required(name) {
   const value = process.env[name]
   if (value) return value
 
+  // Two very different fixes depending on where this is running, and the
+  // wrong one wastes real time — a container has no .env file to copy.
   throw new Error(
-    `${name} is not set.\n\n` +
-      `  Copy server/.env.example to server/.env and fill it in, then start with\n` +
-      `  npm run server (which passes --env-file=server/.env).\n`,
+    IS_PRODUCTION
+      ? `${name} is not set.\n\n` +
+        `  Add it to this service's environment variables and redeploy.\n` +
+        `  The full list is in server/.env.example.\n`
+      : `${name} is not set.\n\n` +
+        `  Copy server/.env.example to server/.env and fill it in, then start\n` +
+        `  with npm run server.\n`,
   )
 }
 
