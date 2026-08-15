@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { PORT, IS_PRODUCTION, CORS_ORIGINS, PROJECT_ROOT } from './config.js'
+import { PORT, IS_PRODUCTION, CORS_ORIGINS, PROJECT_ROOT, MISSING_CONFIG } from './config.js'
 import { attachUser } from './auth.js'
 import { authRouter } from './routes/auth.js'
 import { catalogueRouter } from './routes/catalogue.js'
@@ -60,6 +60,18 @@ app.use('/api', uploadsRouter)
  * explained the problem with it.
  */
 app.get('/api/health', async (_req, res) => {
+  // Reported before anything is attempted: with a variable missing the
+  // database call below would fail anyway, and "connection refused" hides the
+  // real answer, which is that nobody set DATABASE_URL.
+  if (MISSING_CONFIG.length) {
+    return res.json({
+      ok: false,
+      configured: false,
+      missing: MISSING_CONFIG,
+      hint: 'Set these on the service and redeploy. See server/.env.example.',
+    })
+  }
+
   try {
     const [families, categories, products, customTents] = await Promise.all([
       countRows('families'),
@@ -143,14 +155,26 @@ const server = app.listen(PORT, () => {
   console.log(`  Health · /api/health`)
 })
 
-try {
-  await ensureSeeded()
-  console.log('  Database reachable, catalogue present.\n')
-} catch (error) {
-  // Deliberately not fatal. The port stays open so /api/health can report the
-  // problem rather than the container looking simply dead.
-  console.error('\n  ! Could not reach the database at startup.')
-  console.error(`  ! ${error.message}\n`)
+if (MISSING_CONFIG.length) {
+  console.error('\n  ┌──────────────────────────────────────────────┐')
+  console.error('  │  NOT CONFIGURED — these are missing:         │')
+  for (const name of MISSING_CONFIG) {
+    console.error(`  │    ${name.padEnd(42)}│`)
+  }
+  console.error('  ├──────────────────────────────────────────────┤')
+  console.error('  │  Set them on the service and redeploy.       │')
+  console.error('  │  The full list is in server/.env.example.    │')
+  console.error('  └──────────────────────────────────────────────┘\n')
+} else {
+  try {
+    await ensureSeeded()
+    console.log('  Database reachable, catalogue present.\n')
+  } catch (error) {
+    // Deliberately not fatal. The port stays open so /api/health can report
+    // the problem rather than the container looking simply dead.
+    console.error('\n  ! Could not reach the database at startup.')
+    console.error(`  ! ${error.message}\n`)
+  }
 }
 
 /**

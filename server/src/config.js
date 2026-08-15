@@ -20,27 +20,24 @@ export const PORT = Number(process.env.PORT ?? 4000)
 export const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 /**
- * Reads a required variable, or explains exactly how to supply it.
+ * Names of variables that are required and absent.
  *
- * Credentials arrive through `node --env-file=server/.env`, so a missing one
- * almost always means the file was never created — worth saying outright
- * rather than surfacing a connection error twelve frames deep.
+ * Collected rather than thrown. This module is imported at the top of the
+ * server, so throwing here killed the process before it could open a port —
+ * and a platform health check reads "nothing listening" as an unavailable
+ * service, rolls the deployment back, and takes the explaining log with it.
+ *
+ * The server starts misconfigured instead, refuses to pretend it is healthy,
+ * and says exactly which variables are missing.
  */
+export const MISSING_CONFIG = []
+
 function required(name) {
   const value = process.env[name]
   if (value) return value
 
-  // Two very different fixes depending on where this is running, and the
-  // wrong one wastes real time — a container has no .env file to copy.
-  throw new Error(
-    IS_PRODUCTION
-      ? `${name} is not set.\n\n` +
-        `  Add it to this service's environment variables and redeploy.\n` +
-        `  The full list is in server/.env.example.\n`
-      : `${name} is not set.\n\n` +
-        `  Copy server/.env.example to server/.env and fill it in, then start\n` +
-        `  with npm run server.\n`,
-  )
+  MISSING_CONFIG.push(name)
+  return ''
 }
 
 /* ── Supabase ───────────────────────────────────────────────────────────── */
@@ -88,15 +85,13 @@ export const CORS_ORIGINS = (process.env.CORS_ORIGINS ?? '')
  */
 const SAMESITE = process.env.COOKIE_SAMESITE ?? 'Strict'
 
-if (!['Strict', 'Lax', 'None'].includes(SAMESITE)) {
-  throw new Error(`COOKIE_SAMESITE must be Strict, Lax or None — got "${SAMESITE}".`)
+const SAMESITE_OK = ['Strict', 'Lax', 'None'].includes(SAMESITE)
+
+if (!SAMESITE_OK) {
+  console.error(`COOKIE_SAMESITE must be Strict, Lax or None — got "${SAMESITE}". Using Strict.`)
 }
 
-if (SAMESITE === 'None' && !IS_PRODUCTION) {
-  throw new Error('COOKIE_SAMESITE=None requires HTTPS, so it only works with NODE_ENV=production.')
-}
-
-export const COOKIE_SAMESITE = SAMESITE
+export const COOKIE_SAMESITE = SAMESITE_OK ? SAMESITE : 'Strict'
 
 /* ── Sessions ───────────────────────────────────────────────────────────── */
 
@@ -111,7 +106,11 @@ function resolveSecret() {
   if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET
 
   if (IS_PRODUCTION) {
-    throw new Error('SESSION_SECRET must be set in production.')
+    // Recorded, not thrown — see MISSING_CONFIG. An ephemeral key lets the
+    // process boot and report itself; it just cannot outlive a restart, which
+    // is exactly why the variable is required.
+    MISSING_CONFIG.push('SESSION_SECRET')
+    return randomBytes(32).toString('hex')
   }
 
   const secretPath = join(DATA_DIR, '.session-secret')
