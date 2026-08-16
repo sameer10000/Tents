@@ -62,9 +62,29 @@ export interface BellSpec extends CommonSpec {
   branding: 'none' | 'printed' | 'embroidered'
 }
 
+/**
+ * The eleven pavilion forms the house cuts, in cutting-sheet order.
+ *
+ * The id is what a design stores, so it never changes once it has shipped —
+ * `geteld` is the Viking tent and `saxon` the Anglo Saxon one, whatever the
+ * customer-facing label says.
+ */
+export type MedievalForm =
+  | 'round'
+  | 'square'
+  | 'rectangular'
+  | 'oval'
+  | 'wedge'
+  | 'double-bell-wedge'
+  | 'saxon'
+  | 'geteld'
+  | 'regent'
+  | 'tudor'
+  | 'imperial'
+
 export interface MedievalSpec extends CommonSpec {
   family: 'medieval'
-  form: 'round' | 'oval' | 'geteld' | 'saxon'
+  form: MedievalForm
   diameter: number
   length: number
   width: number
@@ -105,6 +125,45 @@ export interface SafariSpec extends CommonSpec {
 }
 
 export type TentSpec = BellSpec | MedievalSpec | SafariSpec
+
+/* ── How a pavilion is set out ──────────────────────────────────────────── */
+
+/**
+ * Three facts about a form decide which controls it needs and how the geometry
+ * lays it out. They are declared once, here, because the form control and the
+ * model both have to agree on them.
+ *
+ * The argument is a plain string: the configurator reads the spec as a bag of
+ * values, and a design stored before a form existed must not throw.
+ */
+
+/** Set out on a circle — sized by diameter, with no length or width. */
+const ROUND_PLAN: readonly string[] = ['round', 'regent', 'tudor']
+
+/** Cut square — one side length does for both. */
+const SQUARE_PLAN: readonly string[] = ['square']
+
+/** Roofed in gores rather than flat planes, so the gore count applies. */
+const GORED: readonly string[] = [
+  'round',
+  'oval',
+  'double-bell-wedge',
+  'regent',
+  'tudor',
+  'imperial',
+]
+
+/**
+ * Bare cloth on a ridge: an inverted V and its two A-frames, and nothing else.
+ * There is no wall to raise, no edge to scallop, no door to hang and no frame
+ * to choose, so those controls are not offered.
+ */
+const BARE_CLOTH: readonly string[] = ['saxon']
+
+export const isRoundPlan = (form: string) => ROUND_PLAN.includes(form)
+export const isSquarePlan = (form: string) => SQUARE_PLAN.includes(form)
+export const isGored = (form: string) => GORED.includes(form)
+export const isBareCloth = (form: string) => BARE_CLOTH.includes(form)
 
 /* ── Control declarations ───────────────────────────────────────────────── */
 
@@ -443,10 +502,53 @@ const medieval: TentFamilyDef = {
           key: 'form',
           label: 'Pavilion type',
           options: [
-            { value: 'round', label: 'Round pavilion', hint: 'Conical, walled, single mast' },
-            { value: 'oval', label: 'Oval (Burgundian)', hint: 'Two masts, ridged centre' },
+            { value: 'round', label: 'Round medieval', hint: 'Conical, walled, single mast' },
+            {
+              value: 'square',
+              label: 'Square medieval',
+              hint: 'Four-sided pyramid on a square plan',
+            },
+            {
+              value: 'rectangular',
+              label: 'Rectangular medieval',
+              hint: 'Hipped roof over a full-length ridge',
+            },
+            {
+              value: 'oval',
+              label: 'Oval (Burgundian)',
+              hint: 'Two masts, gored ends, ridged centre',
+            },
+            {
+              value: 'wedge',
+              label: 'Wedge',
+              hint: 'A-frame on two uprights and a ridge pole',
+            },
+            {
+              value: 'double-bell-wedge',
+              label: 'Double bell wedge',
+              hint: 'A wedge with a gored bell at each end',
+            },
+            {
+              value: 'saxon',
+              label: 'Anglo Saxon',
+              hint: 'Bare cloth over a ridge, on two crossed A-frames',
+            },
             { value: 'geteld', label: 'Viking geteld', hint: 'A-frame, crossed gable ends' },
-            { value: 'saxon', label: 'Saxon square', hint: 'Four-sided pyramid roof' },
+            {
+              value: 'regent',
+              label: 'Regent',
+              hint: 'Round, with a raised crown above the roof',
+            },
+            {
+              value: 'tudor',
+              label: 'Tudor — King Henry VIII',
+              hint: 'Two round pavilions under one covered gallery',
+            },
+            {
+              value: 'imperial',
+              label: 'Imperial',
+              hint: 'A level ridge on two masts, raked in on every side',
+            },
           ],
         },
         {
@@ -457,7 +559,18 @@ const medieval: TentFamilyDef = {
           max: 9,
           step: 0.5,
           unit: 'm',
-          when: (spec) => spec.form === 'round',
+          when: (spec) => isRoundPlan(String(spec.form)),
+        },
+        {
+          kind: 'range',
+          key: 'width',
+          label: 'Side',
+          min: 3,
+          max: 8,
+          step: 0.5,
+          unit: 'm',
+          hint: 'Square in plan — the same both ways',
+          when: (spec) => isSquarePlan(String(spec.form)),
         },
         {
           kind: 'range',
@@ -467,7 +580,7 @@ const medieval: TentFamilyDef = {
           max: 12,
           step: 0.5,
           unit: 'm',
-          when: (spec) => spec.form !== 'round',
+          when: (spec) => !isRoundPlan(String(spec.form)) && !isSquarePlan(String(spec.form)),
         },
         {
           kind: 'range',
@@ -477,7 +590,7 @@ const medieval: TentFamilyDef = {
           max: 8,
           step: 0.5,
           unit: 'm',
-          when: (spec) => spec.form !== 'round',
+          when: (spec) => !isRoundPlan(String(spec.form)) && !isSquarePlan(String(spec.form)),
         },
         {
           kind: 'range',
@@ -488,6 +601,7 @@ const medieval: TentFamilyDef = {
           step: 0.1,
           unit: 'm',
           hint: 'Zero pitches the roof straight to the ground',
+          when: (spec) => !isBareCloth(String(spec.form)),
         },
         {
           kind: 'range',
@@ -507,7 +621,7 @@ const medieval: TentFamilyDef = {
           kind: 'select',
           key: 'gores',
           label: 'Gore count',
-          when: (spec) => spec.form === 'round' || spec.form === 'oval',
+          when: (spec) => isGored(String(spec.form)),
           options: [
             { value: '8', label: '8 gores' },
             { value: '10', label: '10 gores' },
@@ -529,6 +643,7 @@ const medieval: TentFamilyDef = {
           kind: 'select',
           key: 'valanceEdge',
           label: 'Scallop',
+          when: (spec) => !isBareCloth(String(spec.form)),
           // Straight off the house cutting sheet, and drawn from the same
           // profile the cloth is cut to.
           options: SCALLOPS.map((profile) => ({
@@ -543,11 +658,13 @@ const medieval: TentFamilyDef = {
           key: 'braid',
           label: 'Braid the edge',
           hint: 'A coloured cord sewn along the scallop',
+          when: (spec) => !isBareCloth(String(spec.form)),
         },
         {
           kind: 'select',
           key: 'finial',
           label: 'Finial',
+          when: (spec) => !isBareCloth(String(spec.form)),
           options: [
             { value: 'none', label: 'None' },
             { value: 'ball', label: 'Turned ball' },
@@ -565,6 +682,7 @@ const medieval: TentFamilyDef = {
           kind: 'select',
           key: 'door',
           label: 'Entry',
+          when: (spec) => !isBareCloth(String(spec.form)),
           options: [
             { value: 'single-arch', label: 'Single arch' },
             { value: 'double-arch', label: 'Double arch, tied back' },
@@ -575,6 +693,7 @@ const medieval: TentFamilyDef = {
           kind: 'select',
           key: 'frame',
           label: 'Frame',
+          when: (spec) => !isBareCloth(String(spec.form)),
           options: [
             { value: 'rope-and-pole', label: 'Rope and pole' },
             { value: 'internal', label: 'Internal steel frame' },
@@ -584,12 +703,18 @@ const medieval: TentFamilyDef = {
           kind: 'select',
           key: 'ground',
           label: 'Ground',
+          when: (spec) => !isBareCloth(String(spec.form)),
           options: [
             { value: 'none', label: 'Open ground' },
             { value: 'sewn-in', label: 'Sewn-in floor' },
           ],
         },
-        { kind: 'toggle', key: 'heraldry', label: 'Painted heraldry panel' },
+        {
+          kind: 'toggle',
+          key: 'heraldry',
+          label: 'Painted heraldry panel',
+          when: (spec) => !isBareCloth(String(spec.form)),
+        },
       ],
     },
   ],
@@ -870,6 +995,19 @@ export function summariseSpec(
   }))
 }
 
+/**
+ * The customer-facing name of a pavilion form, read back off the control that
+ * sets it so the two can never drift apart. An unrecognised id — a design saved
+ * before a form was retired — comes back as itself rather than throwing.
+ */
+export function formLabel(form: string): string {
+  const field = medieval.sections
+    .flatMap((section) => section.fields)
+    .find((candidate) => candidate.key === 'form')
+  if (field?.kind !== 'select') return form
+  return field.options.find((option) => option.value === form)?.label ?? form
+}
+
 /** The one-line description that rides on the cart line. */
 export function specHeadline(spec: TentSpec, unit: LengthUnit = 'm'): string {
   const def = familyDef(spec.family)
@@ -877,11 +1015,14 @@ export function specHeadline(spec: TentSpec, unit: LengthUnit = 'm'): string {
     return `${def.name} · ${formatLength(spec.diameter, unit)} Ø`
   }
   if (spec.family === 'medieval') {
-    const size =
-      spec.form === 'round'
-        ? `${formatLength(spec.diameter, unit)} Ø`
+    const size = isRoundPlan(spec.form)
+      ? `${formatLength(spec.diameter, unit)} Ø`
+      : isSquarePlan(spec.form)
+        ? `${formatLength(spec.width, unit)} square`
         : `${formatLength(spec.length, unit)} × ${formatLength(spec.width, unit)}`
-    return `${def.name} · ${size}`
+    // Eleven forms share one family name, so the headline has to say which.
+    const form = formLabel(spec.form)
+    return `${def.name} · ${form} · ${size}`
   }
   return `${def.name} · ${formatLength(spec.length, unit)} × ${formatLength(spec.width, unit)}`
 }
